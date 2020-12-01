@@ -1,0 +1,207 @@
+作业一、
+
+1、自定义ClassLoader
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
+/**
+ * @Description: TODO
+ * @author: captailgodwin
+ * @date: 2020/12/01
+ * @version V1.0
+ * @Copyright: 2018 www.youtil.cn Inc.All rights reserved.
+ */
+public class HelloClassLoader extends ClassLoader {
+
+    private static final String HELLO_ClASS_NAME = "Hello";
+    private static final String HELLO_METHOD_NAME = "hello";
+
+    public static void main(String[] args) {
+        try {
+            Class helloClass = new HelloClassLoader().findClass(HELLO_ClASS_NAME);
+            Method method = helloClass.getMethod(HELLO_METHOD_NAME);
+            method.invoke(helloClass.newInstance());
+        } catch (ClassNotFoundException  | NoSuchMethodException | IllegalAccessException |InstantiationException|
+                InvocationTargetException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
+    @Override
+    protected Class<?> findClass(String name) throws ClassNotFoundException {
+
+        File file = new File("src/main/resources/Hello.xlass");
+        byte[] buffer = null;
+        try {
+            FileInputStream fis = new FileInputStream(file);
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            if (file.length() > Integer.MAX_VALUE) {
+                return null;
+            }
+            byte[] b = new byte[(int)file.length()];
+            int n;
+            while ((n = fis.read(b)) != -1)
+            {
+                bos.write(b, 0, n);
+            }
+            fis.close();
+            bos.close();
+            buffer = bos.toByteArray();
+            for (int i = 0; i <buffer.length; i++) {
+                buffer[i] =  (byte)(255 -buffer[i]);
+            }
+
+        } catch (java.io.IOException e) {
+            e.printStackTrace();
+        }
+        return defineClass(name, buffer, 0, buffer.length);
+    }
+}
+
+
+2、 JVM参数介绍：
+ -Xms	初始堆大小	物理内存的1/64(<1GB)	-Xms1g	默认(MinHeapFreeRatio参数可以调整)空余堆内存小于40%时，JVM就会增大堆直到-Xmx的最大限制.
+-Xmx	最大堆大小	物理内存的1/4(<1GB)	-Xmx1g	默认(MaxHeapFreeRatio参数可以调整)空余堆内存大于70%时，JVM会减少堆直到 -Xms的最小限制
+--一般设置-Xms和-Xmx一致的，防止GC抖动厉害
+-Xss 	 每个线程的堆栈大小	 	 	 JDK5.0以后每个线程堆栈大小为1M,以前每个线程堆栈大小为256K.更具应用的线程所需内存大小进行 调整.在相同物理内存下,减小这个值能生成更多的线程.但是操作系统对一个进程内的线程数还是有限制的,不能无限生成,经验值在3000~5000左右
+一般小的应用， 如果栈不是很深， 应该是128k够用的 大的应用建议使用256k。这个选项对性能影响比较大，需要严格的测试。
+-Xmn	年轻代大小	 	-Xmn512m	注意：此处的大小是（eden+ 2 survivor space).与jmap -heap中显示的New gen是不同的。
+整个堆大小=年轻代大小 + 年老代大小 + 持久代大小.
+增大年轻代后,将会减小年老代大小.此值对系统性能影响较大,官方建议设置为-Mmx的1/2 ~1/4
+-XX:PermSize and MaxPermSize :设置持久带的大小
+
+3、分析字节码，包含基本数据类型、四则运算、对象引用、流程控制
+public class Test {
+
+
+    /**
+     * 四则运算+流程控制
+     *
+     * @param args
+     */
+    public static void main(String[] args) {
+        int num1 = 1;
+        int num2 = 10;
+        float num3;
+        for (int i = 0; i < 3; i++) {
+            num1 = num1 + 1;
+            num2 = num2 - 1;
+            num3 = num1 * num2;
+            if (num3 > num2) {
+                num3 = num3 / num2;
+            }
+        }
+    }
+}
+
+
+Java字节码
+ Classfile /Users/ipipman/JAVA-000/Week_01/Test.class
+  Last modified 2020-10-17; size 422 bytes
+  MD5 checksum a49fe32db56789480c59ce59d9dc3643
+  Compiled from "Test.java"
+public class Week_01.Test
+  minor version: 0                                
+  major version: 52                              // JVM版本号
+  flags: ACC_PUBLIC, ACC_SUPER                   // 类的标示位
+Constant pool:                                   // 常量池
+   #1 = Methodref          #3.#14                // java/lang/Object."<init>":()V
+   #2 = Class              #15                   // Week_01/Test
+   #3 = Class              #16                   // java/lang/Object
+   #4 = Utf8               <init>
+   #5 = Utf8               ()V
+   #6 = Utf8               Code
+   #7 = Utf8               LineNumberTable
+   #8 = Utf8               main
+   #9 = Utf8               ([Ljava/lang/String;)V
+  #10 = Utf8               StackMapTable
+  #11 = Class              #17                   // "[Ljava/lang/String;"
+  #12 = Utf8               SourceFile
+  #13 = Utf8               Test.java
+  #14 = NameAndType        #4:#5                 // "<init>":()V
+  #15 = Utf8               Week_01/Test
+  #16 = Utf8               java/lang/Object
+  #17 = Utf8               [Ljava/lang/String;
+{
+  public Week_01.Test();                         // 初始化构造器
+    descriptor: ()V
+    flags: ACC_PUBLIC
+    Code:
+      stack=1, locals=1, args_size=1
+         0: aload_0
+         1: invokespecial #1                    // Method java/lang/Object."<init>":()V
+         4: return
+      LineNumberTable:				            // 行号的表格（源代码行号与字节码行号映射关系）
+        line 11: 0
+
+  public static void main(java.lang.String[]);
+  descriptor: ([Ljava/lang/String;)V           // 方法描述符（行参类型[String=字符串数组、方法返回类型V=空）
+    flags: ACC_PUBLIC, ACC_STATIC              // 方法访问类型（ACC_PUBLIC=公共方法，ACC_STATIC=静态方法）
+    Code:
+      stack=2, locals=5, args_size=1           // stack=2代表栈的最大深度为2，locals=5代表本地变量表最大槽数为5，args_size=1代表行参数为1
+         0: iconst_1                           // 常量数字1，入操作数栈
+         1: istore_1                           // 常量数字1，出操作数栈，入本地变量表LocalVariableTable槽位1，代表完成：int num1 = 1
+         2: bipush        10                   // 常量数字10，入操作数栈，常量数大于1-5用b[类型]push+操作数，入操作数栈
+         4: istore_2                           // 常量数字10，出操作数栈，入本地变量表槽位2，完成：代表int num2 = 10
+         5: iconst_0                           // 常量数字0，入操作数栈
+         6: istore        4                    // 常量数字0，出操作数栈，入本地变量表槽位4，完成for循环中初始化的：代表int i = 0
+         8: iload         4                    // 局部表量表槽位4（int i = 0）出栈，入操作数栈
+        10: iconst_3                           // 常量数字3，入操作数栈
+        11: if_icmpge     45                   // 比较数值，如果满足条件跳入45行指令return（跳出方法），代表完成： for 中的(i < 3) 时
+        14: iload_1                            // 局部标量表槽位1（int num1=1）出栈，入操作数栈
+        15: iconst_1                           // 常量数字1，入操作数栈
+        16: iadd                               // 操作数栈相加计算，代表：（int num1 = 1）+ （常量数子1）
+        17: istore_1                           // 将计算结果1+ 1 = 2从操作数栈，入本地变量表槽位1，代表完成：num1 = num1 + 1�
+        18: iload_2                            // 局部变量表槽位2（int num2 = 10）出栈，入操作数栈
+        19: iconst_1                           // 常量数字1，入操作数栈
+        20: isub                               // 操作数栈相减计算，代表：（int num2 = 10）- (常量数字1) 
+        21: istore_2                           // 将计算结果10 - 1 = 9从操作数栈，如本地变量表槽位2，代表完成：num2 = num2 - 1
+        22: iload_1                            // 局部变量表槽位1出栈，入操作数栈，int num1 = 2
+        23: iload_2                            // 局部变量表槽位2出栈，入操作数栈，int num2 = 9
+        24: imul                               // 操作数栈相除计算，代表：（int num2 = 9） / (int num1 = 2)
+        25: i2f                                // 操作数栈类型转换，i=int类型，2代表to，f代表float类型，值=4.5
+        26: fstore_3                           // 操作数栈计算结果4.5出栈，入本地变量表槽位3，代表完成：int num3 = num2 / num1
+        27: fload_3                            // 本地变量表槽位3出栈，入操作数栈
+        28: iload_2                            // 本地变量表槽位2出栈，入操作数栈
+        29: i2f                                // 操作数栈int类型转换float
+        30: fcmpl                              // 操作数栈float类型比较
+        31: ifle          39                   // 如果不满足if (num3 > num2)条件，跳如39行指令for(i++）
+        34: fload_3                            // 本地变量表槽位3出栈，入操作数栈
+        35: iload_2                            // 本地变量表槽位2出栈，入操作数栈
+        36: i2f                                // 操作数栈int类型转换float
+        37: fdiv                               // 操作数栈浮点数除法，代表num2 / num3
+        38: fstore_3                           // 操作数栈计算结果num2 / num3出栈，入本地变量表槽位3
+        39: iinc          4, 1                 // 本地变量表槽位4数值加1，代表for(i++)
+        42: goto          8                    // 跳入第8行指令，即：（int i = 槽位4的数值）
+        45: return                             // 方法返回
+      LineNumberTable:                         // 行号的表格（源代码行号与字节码行号映射关系）
+        line 20: 0                             // 20=源代码第20行，0代表字节码中Code中的第一行iconst_1
+        line 21: 2
+        line 23: 5
+        line 24: 14
+        line 25: 18
+        line 26: 22
+        line 27: 27
+        line 28: 34
+        line 23: 39
+        line 31: 45
+      StackMapTable: number_of_entries = 3     //在Jvm中的ClassLoad的验证阶段使用，被类型检测器使用
+        frame_type = 255 /* full_frame */
+          offset_delta = 8
+          locals = [ class "[Ljava/lang/String;", int, int, top, int ]
+          stack = []
+        frame_type = 255 /* full_frame */
+          offset_delta = 30
+          locals = [ class "[Ljava/lang/String;", int, int, float, int ]
+          stack = []
+        frame_type = 249 /* chop */
+          offset_delta = 5
+}
+SourceFile: "Test.java"
+
