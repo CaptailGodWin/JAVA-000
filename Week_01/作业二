@@ -1,0 +1,48 @@
+Attaching to process ID 306692, please wait...
+Debugger attached successfully.
+Server compiler detected.
+JVM version is 25.211-b12
+
+using thread-local object allocation.
+Garbage-First (G1) GC with 8 thread(s)          --执行GC的算法类型以及当前执行的系统线程数
+
+Heap Configuration:
+   MinHeapFreeRatio         = 40
+   MaxHeapFreeRatio         = 70
+   MaxHeapSize              = 4257218560 (4060.0MB)            ---最大堆内存 默认是物理内存的1/4
+   NewSize                  = 1363144 (1.2999954223632812MB)     ---初始young空间的初始内存
+   MaxNewSize               = 2554331136 (2436.0MB)               ---最大young空间的占用内存
+   OldSize                  = 5452592 (5.1999969482421875MB)      ---老年代占用的内存
+   NewRatio                 = 2                                  --young区和老年代区的比例
+   SurvivorRatio            = 8                                  ---survivor:eden = 1:8
+   MetaspaceSize            = 21807104 (20.796875MB)        --元空间数据大小
+   CompressedClassSpaceSize = 1073741824 (1024.0MB)          --类指针压缩空间默认大小
+   MaxMetaspaceSize         = 17592186044415 MB              --最大元空间数据大小
+   G1HeapRegionSize         = 1048576 (1.0MB)                --使用G1堆被分割大小平均1M 
+
+Heap Usage:
+G1 Heap:                             ---堆内存分配情况
+   regions  = 4060                                   
+   capacity = 4257218560 (4060.0MB)
+   used     = 114842104 (109.52196502685547MB)
+   free     = 4142376456 (3950.4780349731445MB)
+   2.697585345489051% used
+G1 Young Generation:
+Eden Space:       ---Eden区分配情况
+   regions  = 87
+   capacity = 147849216 (141.0MB)
+   used     = 91226112 (87.0MB)
+   free     = 56623104 (54.0MB)
+   61.702127659574465% used
+Survivor Space:      ---存活区分配情况
+   regions  = 19
+   capacity = 19922944 (19.0MB)
+   used     = 19922944 (19.0MB)
+   free     = 0 (0.0MB)
+   100.0% used
+G1 Old Generation:    ---老年代分配情况
+   regions  = 4
+   capacity = 98566144 (94.0MB)
+   used     = 3693048 (3.5219650268554688MB)
+   free     = 94873096 (90.47803497314453MB)
+   3.7467713051653924% used
